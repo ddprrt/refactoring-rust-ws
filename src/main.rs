@@ -1,44 +1,32 @@
 use std::path::PathBuf;
 
-fn get_markdown_files(
-    path: impl Into<PathBuf>,
-    ext: impl AsRef<str>,
-) -> Result<Vec<PathBuf>, std::io::Error> {
-    let path = path.into();
+fn main() {
+    let path: PathBuf = "../../../Web/ddprrt.github.io/src/content/_posts".into();
     let mut files = Vec::new();
-    for entry in path.read_dir()? {
-        let path = entry?.path();
-        if path.is_file() && path.extension().map(|e| e == ext.as_ref()).unwrap_or(false) {
+    for entry in path.read_dir().unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_file() && path.extension().unwrap() == "md" {
             files.push(path);
         }
     }
-    Ok(files)
-}
-
-fn read_files(files: Vec<PathBuf>) -> Result<Vec<String>, std::io::Error> {
     let mut contents = Vec::new();
     for file in files {
-        let content = std::fs::read_to_string(file)?;
+        let content = std::fs::read_to_string(file).unwrap();
         contents.push(content);
     }
-    Ok(contents)
-}
 
-fn parse_markdown_to_sentences(content: String) -> Vec<String> {
+    let last = contents.last().expect("No files found").to_owned();
     let mut sentences = Vec::new();
     let mut sentence = String::new();
     let mut in_code_block = false;
     let mut in_preamble = false;
-    for line in content.lines() {
-        // Remove empty lines
+    for line in last.lines() {
         if line.is_empty() {
             continue;
         }
-        // Remove Headlines
         if line.starts_with('#') {
             continue;
         }
-        // Remove preamble
         if line.starts_with("---") {
             in_preamble = !in_preamble;
             continue;
@@ -46,7 +34,6 @@ fn parse_markdown_to_sentences(content: String) -> Vec<String> {
         if in_preamble {
             continue;
         }
-        // Parse code blocks
         if line.starts_with("```") {
             if in_code_block {
                 sentences.push(sentence);
@@ -55,7 +42,6 @@ fn parse_markdown_to_sentences(content: String) -> Vec<String> {
             in_code_block = !in_code_block;
             continue;
         }
-        // Look for "." within a line
         if line.contains(". ") && !in_code_block {
             let line = line.split(". ");
             let count = line.clone().count();
@@ -87,20 +73,6 @@ fn parse_markdown_to_sentences(content: String) -> Vec<String> {
             }
         }
     }
-    sentences
-}
-
-fn main() {
-    let files = get_markdown_files("../../../Web/ddprrt.github.io/src/content/_posts", "md");
-    let files = read_files(files.expect("No Markdown files found"));
-    /*let files = files
-    .expect("Error reading files")
-    .into_iter()
-    .flat_map(parse_markdown_to_sentences)
-    .collect::<Vec<_>>();*/
-    let files = files.expect("Error reading files");
-    let last = files.last().expect("No files found").to_owned();
-    let sentences = parse_markdown_to_sentences(last);
     for (i, sentence) in sentences.into_iter().enumerate() {
         println!("{i}, {}", sentence);
     }
