@@ -2,11 +2,15 @@ use std::path::PathBuf;
 
 pub fn get_sentences(path: PathBuf) -> Vec<Vec<String>> {
     let mut files = Vec::new();
-    for entry in path.read_dir().unwrap() {
-        let path = entry.unwrap().path();
-        if path.is_file() && path.extension().unwrap() == "md" {
-            files.push(path);
+    if path.is_dir() {
+        for entry in path.read_dir().unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_file() && path.extension().unwrap() == "md" {
+                files.push(path);
+            }
         }
+    } else if path.is_file() && path.extension().unwrap() == "md" {
+        files.push(path);
     }
     let mut contents = Vec::new();
     for file in files {
