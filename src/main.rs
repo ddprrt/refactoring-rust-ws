@@ -1,79 +1,9 @@
 use std::path::PathBuf;
 
-fn main() {
-    let path: PathBuf = "../../../Web/ddprrt.github.io/src/content/_posts".into();
-    let mut files = Vec::new();
-    for entry in path.read_dir().unwrap() {
-        let path = entry.unwrap().path();
-        if path.is_file() && path.extension().unwrap() == "md" {
-            files.push(path);
-        }
-    }
-    let mut contents = Vec::new();
-    for file in files {
-        let content = std::fs::read_to_string(file).unwrap();
-        contents.push(content);
-    }
+use sentence_extractor::get_sentences;
 
-    let last = contents.last().expect("No files found").to_owned();
-    let mut sentences = Vec::new();
-    let mut sentence = String::new();
-    let mut in_code_block = false;
-    let mut in_preamble = false;
-    for line in last.lines() {
-        if line.is_empty() {
-            continue;
-        }
-        if line.starts_with('#') {
-            continue;
-        }
-        if line.starts_with("---") {
-            in_preamble = !in_preamble;
-            continue;
-        }
-        if in_preamble {
-            continue;
-        }
-        if line.starts_with("```") {
-            if in_code_block {
-                sentences.push(sentence);
-                sentence = String::new();
-            }
-            in_code_block = !in_code_block;
-            continue;
-        }
-        if line.contains(". ") && !in_code_block {
-            let line = line.split(". ");
-            let count = line.clone().count();
-            for (idx, sentence_part) in line.enumerate() {
-                if sentence_part.is_empty() {
-                    continue;
-                }
-                sentence.push_str(sentence_part);
-                if idx < count - 1 {
-                    sentence.push('.');
-                    sentences.push(sentence);
-                    sentence = String::new();
-                } else {
-                    sentence.push(' ');
-                }
-            }
-            continue;
-        }
-        if line.ends_with('.') {
-            sentence.push_str(line);
-            sentences.push(sentence);
-            sentence = String::new();
-        } else {
-            sentence.push_str(line);
-            if in_code_block {
-                sentence.push('\n');
-            } else {
-                sentence.push(' ');
-            }
-        }
-    }
-    for (i, sentence) in sentences.into_iter().enumerate() {
-        println!("{i}, {}", sentence);
-    }
+fn main() {
+    let path: PathBuf = "./fixtures".into();
+    let articles = get_sentences(path);
+    println!("{:?}", articles[0][0]);
 }
